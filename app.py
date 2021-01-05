@@ -12,8 +12,8 @@ teamVR_gameid = '250820'
 hellblade = '747350'
 launch_cmd = 'start steam://rungameid/{0}'
 close_cmd = 'taskkill /IM "{0}" /F'
-game_server_manager_ip = '172.16.0.147'
-# game_server_manager_ip = '192.168.0.103'
+# game_server_manager_ip = '172.16.0.25'
+game_server_manager_ip = '192.168.0.106'
 is_available = 1
 player_ip = ''
 launch_time = time.time()
@@ -22,13 +22,13 @@ launch_time = time.time()
 # Register to manager
 def register_server():
     try:
-        r = get('http://{0}:5000/registration'.format(game_server_manager_ip))
+        r = get('http://{0}:5000/register'.format(game_server_manager_ip))
     except exceptions.RequestException as e:
         raise SystemExit(e)
 
 
 def unregistered():
-    res = get('http://{0}:5000/cancellation'.format(game_server_manager_ip))
+    res = get('http://{0}:5000/deregister'.format(game_server_manager_ip))
     print(res.text)
 
 
