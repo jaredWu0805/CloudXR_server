@@ -8,12 +8,13 @@ from threading import Timer
 
 app = Flask(__name__)
 
-teamVR_gameid = '250820'
+steamVR_gameid = '250820'
 hellblade = '747350'
+redout = '519880'
 launch_cmd = 'start steam://rungameid/{0}'
 close_cmd = 'taskkill /IM "{0}" /F'
-# game_server_manager_ip = '172.16.0.25'
-game_server_manager_ip = '192.168.0.106'
+game_server_manager_ip = '172.16.0.25'
+# game_server_manager_ip = '192.168.0.106'
 is_available = 1
 player_ip = ''
 launch_time = time.time()
@@ -22,7 +23,11 @@ launch_time = time.time()
 # Register to manager
 def register_server():
     try:
-        r = get('http://{0}:5000/register'.format(game_server_manager_ip))
+        req_data = {
+            'games': [hellblade, redout]
+        }
+        print(req_data)
+        r = post('http://{0}:5000/register'.format(game_server_manager_ip), data=req_data)
     except exceptions.RequestException as e:
         raise SystemExit(e)
 
@@ -32,8 +37,8 @@ def unregistered():
     print(res.text)
 
 
-def open_game():
-    os.system(launch_cmd.format(hellblade))
+def open_game(game_id):
+    os.system(launch_cmd.format(game_id))
 
 
 register_server()
@@ -63,8 +68,7 @@ def launch_cloudxr():
         # if os.system(launch_cmd.format(hellblade)) == 0:
         if is_available:
             is_available = 0
-            print('Available: ', is_available)
-            t = Timer(10, open_game)
+            t = Timer(10, open_game, [game_id])
             launch_time = time.time()
             t.start()
             return {'launch success': True}
