@@ -18,6 +18,7 @@ game_server_manager_ip = '172.16.0.25'
 is_available = 1
 player_ip = ''
 launch_time = time.time()
+current_game_id = ''
 
 
 # Register to manager
@@ -37,8 +38,25 @@ def unregistered():
     print(res.text)
 
 
-def open_game(game_id):
-    os.system(launch_cmd.format(game_id))
+def open_game():
+    os.system(launch_cmd.format(current_game_id))
+    req_data = {
+        'client_ip': player_ip,
+        'game_id': current_game_id,
+        'connection_status': 'playing'
+    }
+    print('playing game ', req_data)
+    r = post('http://{0}:5000/connection-status'.format(game_server_manager_ip), data=req_data)
+
+
+def update_status():
+    req_data = {
+        'client_ip': player_ip,
+        'game_id': current_game_id,
+        'connection_status': 'closed'
+    }
+    print('closed game ', req_data)
+    r = post('http://{0}:5000/connection-status'.format(game_server_manager_ip), data=req_data)
 
 
 register_server()
@@ -56,19 +74,17 @@ def index():
 def launch_cloudxr():
     global launch_time
     if request.method == 'POST':
-        global player_ip, is_available
+        global player_ip, is_available, current_game_id
         if not is_available:
             return 'Game server not available now'
         game_title = request.form.get('game_title', type=str)
         game_id = request.form.get('game_id', type=str)
         player_ip = request.form.get('player_ip', type=str)
         print(game_title, game_id, player_ip)
-        # Game_id needs to be generalized
-        # if os.system(launch_cmd.format(steamVR_gameid)) == 0:
-        # if os.system(launch_cmd.format(hellblade)) == 0:
         if is_available:
             is_available = 0
-            t = Timer(10, open_game, [game_id])
+            current_game_id = game_id
+            t = Timer(3, open_game)
             launch_time = time.time()
             t.start()
             return {'launch success': True}
@@ -84,19 +100,19 @@ def launch_cloudxr():
 
 @app.route('/game-disconnection', methods=['POST'])
 def close_clourdxr():
-    global player_ip, is_available
+    global player_ip, is_available, current_game_id
     print(player_ip, request.remote_addr)
-    if request.remote_addr != player_ip and player_ip != '127.0.0.1':
+    if request.form.get('client_ip', type=str) != player_ip or request.remote_addr != game_server_manager_ip:
         return 'Invalid request'
     # Close game app and steamVR, and reset game server status
     if os.system(close_cmd.format("vrmonitor.exe")) == 0:
+        update_status()
         player_ip = ''
         is_available = 1
-        print(player_ip, is_available)
-        register_server()
-        return {'close success': True}
+        current_game_id = ''
+        return {'status': True}
     else:
-        return {'close success': False}
+        return {'status': False}
 
 
 @app.route('/stream-info')
